@@ -1,17 +1,96 @@
 # AEIC Requirements Specification
 
-*Version:* 0.1
-*Date:* 2025-07-17
+*Version:* 0.2
+*Date:* 2025-07-21
 
 ---
 
-## 1. Framework
+## 1. User Stories
+
+| Name    | Narrative                                                                                                                                                                      | Key needs                                                    |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| Aircraft emission analysis | Simulate a candidate aircraft to replace part or all of an existing fleet in order to quantify its emissions. | Loading OAG schedules for years, filtering them for a specific aircraft type or maximum range. Having detailed emissions outputs for AEIC run. |
+| Aircraft Design | Run an annual global schedule multiple times with different performance models in order to analyse and trace emission impacts against design choices.                | Import performance models from external tools, run schedule at scale. Be able to save schedule/trajectories and run with different performance model.       |
+| Environmental Impact | AEIC outputs are able to be inputs to GEOS‑Chem or ACAI so emissions can be translated into climate/AQ impacts.                                            | Scripts to get GEOS-Chem/ACAI suitable inputs. Gridding, summing etc.                            |
+| Emission metrics analysis | Apply alternative emission metric/algorithms to a fixed set of trajectories in order to compare methodologies. | Caching trajectories and running different emissions modules to it |
+| AEIC Developer | Comprehensive logging and a cache layer such that results are reproducible and debugging is easy. | Structured logs, cache directory API |
+
+---
+
+## 2. Technical Requirements
+
+The following numbered technical requirements (TR‑IDs) derive directly from the user stories in Section 1. Each requirement is expressed in **“shall”** form and marked [H]igh or [M]edium.
+
+### 2.1 Missions module
+
+| ID       | Requirement                                                                                                                | Priority |
+| -------- | -------------------------------------------------------------------------------------------------------------------------- | -------- |
+| TR‑SCH‑1 | The module **shall** ingest OAG schedules in SQL format, process them to get aircraft type, load factor, datetime and airport pair.              | H        |
+| TR‑SCH‑2 | The module **shall** allow filtering schedules by date range, airline, aircraft type, and route distance or maximum range. | H        |
+| TR‑SCH‑3 | The module **should** persist filtered schedule subsets to avoid recomputation in later runs.                              | M        |
+
+### 2.2 Performance Model
+
+| ID        | Requirement                                                                                                                                                                       | Priority |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| TR‑PERF‑1 | The system **shall** accept performance models input as a TOML file defining fuel flow at different points specified by altitude, rate of climb/descent, mass, airspeed. | H        |
+| TR‑PERF‑2 | The system **should** support batch execution across a schedule using multiple performance models.                                                                 | M        |
+
+### 2.3 LTO datapoints
+
+| ID        | Requirement                                                                                                                                                                       | Priority |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| TR‑EDB‑1 | The system **shall** accept an emissions databank (EDB) excel file as well as an engine UID in order to get LTO data points. | H        |
+| TR‑EDB‑2 | The system **shall** also accept custom LTO data points within the performance model if the EDB is not needed to be used. | H        |
+
+### 2.4 Trajectory Module
+
+| ID        | Requirement                                                                                                           | Priority |
+| --------- | --------------------------------------------------------------------------------------------------------------------- | -------- |
+| TR‑TRAJ‑1 | The trajectory module **shall** produce 4‑D trajectories (lat, lon, alt, time elapsed) for every flight in the mission. | H        |
+| TR‑TRAJ‑1 | The trajectory module **shall** metrics such as fuel flow, aircraft mass, etc. at each point in the trajectory | H        |
+| TR‑TRAJ‑2 | The module **shall** cache trajectories keyed on aircraft type, airport pair, etc.      | M        |
+
+### 2.5 Emissions Module
+
+| ID       | Requirement                                                                                                     | Priority |
+| -------- | --------------------------------------------------------------------------------------------------------------- | -------- |
+| TR‑EMI‑1 | The emissions module **shall** compute emission indices and emissions in grams for $CO_2$, $H_2O$, $NO_x$, CO, HC, $SO_x$, $PM_{nvol}$, $PM_{vol}$ at every trajectory point. | H        |
+| TR‑EMI‑2 | The module **should** support multiple algorithm variants (e.g., P3T3, BFFM2 for $NO_x$ calculations).                          | H        |
+| TR‑EMI‑3 | The module **shall** aggregate emissions per flight, per aircraft type, and globally per species.                         | H        |
+
+### 2.6 Post‑processing module
+
+| ID       | Requirement                                                                                           | Priority |
+| -------- | ----------------------------------------------------------------------------------------------------- | -------- |
+| TR‑PPM‑1 | The post processing module **shall** grid emissions at user‑defined spatial resolution and temporal resolution (hourly). | H        |
+| TR‑PPM‑2 | The module **shall** output NetCDF files with species names and units conforming to GEOS‑Chem & ACAI requirements.    | M        |
+| TR‑PPM‑3 | The module **shall** include helper scripts to stage data for GEOS‑Chem, ACAI, etc.                                  | M        |
+
+### 2.7 Logging and Developer tools
+
+| ID       | Requirement                                                                                                | Priority |
+| -------- | ---------------------------------------------------------------------------------------------------------- | -------- |
+| TR‑LOG‑1 | All components **shall** emit structured logs with timestamp, run UUID and flight IDs where relevant. | M        |
+| TR‑LOG‑2 | Each run **shall** print a configuration snapshot, and summarized outputs of trajectory and emissions modules. | M        |
+| TR‑LOG‑3 | The system **should** capture runtime metrics and profiling for performance tuning.              | M        |
+
+### 2.8 Documentation & Testing
+
+| ID       | Requirement                                                                                                      | Priority |
+| -------- | ---------------------------------------------------------------------------------------------------------------- | -------- |
+| TR‑DOC‑1 | AEIC **shall** include proper documentation, user guides and example scripts covering each user story.                        | M        |
+| TR‑DOC‑2 | Automated tests **shall** achieve ≥ 80 % code coverage, with a full test for a small schedule. | M        |
+
+---
+
+## 3. Framework
 
 ![Framework Diagram](./assets/AEIC_framework.png)
 
 ---
 
-## 2. Inputs
+## 4. Inputs
 
 | Source                               | Format                                      | Mandatory?                            | Key Fields / Sections                                                                                   |
 | ------------------------------------ | ------------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------- |
@@ -25,9 +104,9 @@
 
 ---
 
-## 3. Modules & Intermediates
+## 5. Modules & Intermediates
 
-### 3.1 Trajectory Module
+### 5.1 Trajectory Module
 
 *For each mission* a *`Ntot`‑length* (total number of mission points) table **`trajectory_<FLIGHT_ID>`** is saved with columns:
 
@@ -49,7 +128,7 @@
 | `groundSpeed` | Ground speed  [`m/s`]    | (Ntot,)    |
 | `FL_weight` | weighting used in linear interpolation over flight levels  [ ]    | (Ntot,)    |
 
-### 3.2 Weather Module
+### 5.2 Weather Module
 
 The trajectory table is extended in‑place with:
 
@@ -58,7 +137,7 @@ The trajectory table is extended in‑place with:
 | `wind_u`, `wind_v`  | m s⁻¹ |
 | `relative_humidity` |       |
 
-### 3.3 Emissions Module
+### 5.3 Emissions Module
 
 For each mission the module stores **`emissions_<FLIGHT_ID>`** containing:
 
@@ -98,7 +177,7 @@ The emissions module also calculates a total fuel burn from trajectory, APU, GSE
 
 > **NOTE:** $CO_2$, $H_2O$ and $SO_2$, $SO_4$ are scalar products of fuel burn and <br> need not be saved in intermediate outputs since they can be computed easily.
 
-### 4. Output Module
+### 6. Output Module
 
 | ID     | Artifact               | Format                                                                                   | Granularity                     |
 | ------ | ---------------------- | ---------------------------------------------------------------------------------------- | ------------------------------- |
@@ -109,7 +188,7 @@ The emissions module also calculates a total fuel burn from trajectory, APU, GSE
 
 ---
 
-## 5. Nomenclature
+## 7. Nomenclature
 
 | Term               | Meaning                                               |
 | ------------------ | ----------------------------------------------------- |
