@@ -11,6 +11,7 @@
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
 | Aircraft emission analysis | Calculate emissions from a candidate aircraft flying a set of prescribed missions. Often missions are chosen to replace part or all of an existing fleet in order to quantify its emissions. | Loading OAG schedules for years, filtering them for a specific aircraft type or maximum range. Having detailed emissions outputs for AEIC run. |
 | Aircraft Design | Run an annual global schedule multiple times with different performance models in order to analyse and trace emission impacts against design choices.                | Import performance models from external tools, run schedule at scale. Be able to save schedule/trajectories and run with different performance model.       |
+| Fast aircraft optimization | Run a small schedule sampled from the annual OAG data multiple times with different performance models to use outputs of AEIC in objective functions within an optimization loop.                | Import performance models from external tools, run sampled schedule. Be able to save appropriate vertically optimized trajectories and run with different performance model.       |
 | Full fleet annual environmental impact | Generate outputs (e.g., gridded emissions) compatible GEOS‑Chem or ACAI so aviation emissions can be translated into climate/AQ impacts.                                            | AEIC will output trajectory level information in a SQLite database that can be processed to get GEOS-Chem/ACAI suitable inputs. Standard gridding tools will be used. Grid definitions etc. will be defined in some config/ overlay files     |
 | "Filtered fleet" environmental impact | Calculate trajectory level emissions for a filtered fleet of aircraft types/ engine types/ flights/ regions of operation/ altitudes of operations. "Full fleet" analysis outputs in SQLite database if already run can be filtered and processed | No additional needs apart from above   |
 | "Parallel universe" fleet impacts | Calculate emissions inventory (a trajectory level SQLite database) for a slate of "what-if" analyses -- e.g., what if twin aisles where possible were replaced with A321XLRs; what if all single-aisles were updated to latest aircraft/ engine types; what if flights over a threshold distance had a hop... | Input files/ pre-processing system to define "replacement mappings" with logic to hold appropriate quantities constant (ASK? RPK? payload? frequency of departures?) and make required calculations; Logic to only run the affected missions and combine with existing (i.e., from a "normal" full fleet run) inventory database? |
@@ -120,14 +121,14 @@ The following numbered technical requirements (TR‑IDs) derive directly from th
 | `fuelMass` | Mass of fuel over the trajectory [`kg`]    | (Ntot,)    |
 | `groundDist` | Cumulative ground distance covered [`m`]    | (Ntot,)    |
 | `altitude` | Altitude [`m`]    | (Ntot,)    |
-| `FLs` | Altitude in flight levels [ ]    | (Ntot,)    |
-| `rocs` | Rate of climb (negative for rate of descent) [`m/s`]    | (Ntot,)    |
+| `flightLevel` | Altitude in flight levels [ ]    | (Ntot,)    |
+| `climbRate` | Rate of climb (negative for rate of descent) [`m/s`]    | (Ntot,)    |
 | `flightTime` | Elapsed flight time [`s`]    | (Ntot,)    |
 | `latitude` | Latitude at mission point [`degrees`]    | (Ntot,)    |
 | `longitude` | Longitude at mission point [`degrees`]    | (Ntot,)    |
-| `azimuth` | Azimuth to arrival airport [`degrees`]    | (Ntot,)    |
+| `azimuth` | Azimuth to arrival airport [`degrees`] between the current heading and the arrival airport    | (Ntot,)    |
 | `heading` | Heading at mission point  [`degrees`]    | (Ntot,)    |
-| `tas` | True airspeed  [`m/s`]    | (Ntot,)    |
+| `trueAirSpeed` | True airspeed  [`m/s`]    | (Ntot,)    |
 | `groundSpeed` | Ground speed  [`m/s`]    | (Ntot,)    |
 | `FL_weight` | weighting used in linear interpolation over flight levels  [ ]    | (Ntot,)    |
 
