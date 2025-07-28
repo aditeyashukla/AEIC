@@ -19,7 +19,7 @@
 
 ## 2. Technical Requirements
 
-The following numbered technical requirements (TR‑IDs) derive directly from the user stories in Section 1. Each requirement is expressed in **“shall”** form and marked [H]igh or [M]edium.
+The following numbered technical requirements (TR‑IDs) derive directly from the user stories in Section 1. Each requirement is expressed in **“shall”** form and marked [H]igh or [M]edium priority.
 
 ### 2.1 Missions module
 
