@@ -100,7 +100,7 @@ def get_SLS_equivalent_fuel_flow(
     z: float = 3.8,
     P_SL: float = 101325.0,
     T_SL: float = 288.15,
-    # n_eng
+    n_eng: int = 2,
 ):
     """
     Convert in-flight fuel flow to its sea-level-static (SLS) equivalent
@@ -141,6 +141,9 @@ def get_SLS_equivalent_fuel_flow(
     theta_amb = Tamb / T_SL
     # apply Fuel-Flow-Method 2 correction
     Wf_SL = (
-        (fuel_flow / 2) * (theta_amb**z) / delta_amb * np.exp(0.2 * (mach_number**2))
+        (fuel_flow / n_eng)
+        * (theta_amb**z)
+        / delta_amb
+        * np.exp(0.2 * (mach_number**2))
     )
     return Wf_SL
