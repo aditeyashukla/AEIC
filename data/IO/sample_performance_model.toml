@@ -4,6 +4,7 @@ aircraft_class = "narrow" # wide, narrow, small, freight
 ISA_offset = 0
 max_alt_ft = 41000
 max_payload_kg = 22422
+n_eng = 2 # Number of engines
 APU_name = "APU 131-9" # None: APU emissions not calculated
 
 [speeds.climb]

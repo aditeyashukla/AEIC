@@ -190,6 +190,7 @@ class Emission:
             flight_pressures,
             flight_temps,
             mach_number,
+            ac_performance.model_info['General_Information']['n_eng'],
         )
 
         (
