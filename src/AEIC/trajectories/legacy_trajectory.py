@@ -518,7 +518,7 @@ class LegacyTrajectory(Trajectory):
         FL: float,
         seg_start_mass: float,
         roc_perf: NDArray[np.float64],
-        rocs: NDArray[np.float64],
+        climbRate: NDArray[np.float64],
     ) -> float:
         """Calculates rate of climb (roc) given flight level and mass given a
         subset of overall performance data (limited to roc > 0 or roc < 0 in
@@ -530,7 +530,7 @@ class LegacyTrajectory(Trajectory):
             seg_start_mass (float): Starting mass of the climb segment.
             roc_perf (NDArray[np.float64]): Performance data (fuel flow rate) restricted
                 to either positive or negative rate of climb.
-            rocs (NDArray[np.float64]): Unfiltered list of rate of climb values.
+            climbRate (NDArray[np.float64]): Unfiltered list of rate of climb values.
 
         Returns:
             float: Rate of climb at the point of interest.
@@ -556,7 +556,7 @@ class LegacyTrajectory(Trajectory):
         ]
 
         non_zero_ff_inds = np.nonzero(pos_roc_reduced_perf)
-        rocs = rocs[non_zero_ff_inds[2]]
+        climbRate = climbRate[non_zero_ff_inds[2]]
         fls = bounding_fls[non_zero_ff_inds[0]]
         masses = bounding_mass[non_zero_ff_inds[3]]
 
@@ -564,10 +564,10 @@ class LegacyTrajectory(Trajectory):
         roc_mat = np.full((len(bounding_fls), len(bounding_mass)), np.nan)
 
         # Fill ROC matrix
-        for kk in range(len(rocs)):
+        for kk in range(len(climbRate)):
             ii = np.where(bounding_fls == fls[kk])[0][0]
             jj = np.where(bounding_mass == masses[kk])[0][0]
-            roc_mat[ii, jj] = rocs[kk]
+            roc_mat[ii, jj] = climbRate[kk]
 
         # Get the precomputed flight-level interpolation weighting
         fl_weight = self.traj_data['FL_weight'][i]
@@ -686,7 +686,7 @@ class LegacyTrajectory(Trajectory):
 
             # Calculate rate of climb
             roc = self.__calc_roc_climb(i, FL, seg_start_mass, pos_roc_perf, pos_rocs)
-            self.traj_data['rocs'][i] = roc
+            self.traj_data['climbRate'][i] = roc
 
             # Calculate the forward true airspeed (will be used for ground speed)
             fwd_tas = np.sqrt(tas**2 - roc**2)
@@ -768,7 +768,7 @@ class LegacyTrajectory(Trajectory):
             self.NClm, self.crz_start_altitude, subset_performance
         )
         self.traj_data['tas'][self.NClm : self.NClm + self.NCrz] = tas_interp
-        self.traj_data['rocs'][self.NClm : self.NClm + self.NCrz] = 0
+        self.traj_data['climbRate'][self.NClm : self.NClm + self.NCrz] = 0
         self.traj_data['FL_weight'][self.NClm : self.NClm + self.NCrz] = fl_weight
 
         # Get fuel flow, ground speed, etc. for cruise segments
@@ -831,9 +831,10 @@ class LegacyTrajectory(Trajectory):
         # Create a mask for ROC limiting to only positive values (climb)
         neg_roc_mask = np.array(self.ac_performance.performance_table_cols[2]) < 0
 
-        # Convert ROC mask to the indices of positive ROC
+        # Convert climbRate mask to the indices of positive climbRate
         # roc_inds = np.where(neg_roc_mask)[0]
-        # neg_rocs = np.array(self.ac_performance.performance_table_cols[2])[roc_inds]
+        # neg_climbRate = \
+        # np.array(self.ac_performance.performance_table_cols[2])[roc_inds]
 
         # Filter performance data to positive ROC
         neg_roc_perf = self.ac_performance.performance_table[
@@ -859,13 +860,13 @@ class LegacyTrajectory(Trajectory):
             )
             self.traj_data['fuelFlow'][i] = ff_interp
             self.traj_data['tas'][i] = tas_interp
-            self.traj_data['rocs'][i] = roc_interp
+            self.traj_data['climbRate'][i] = roc_interp
 
         # Now we calculate segment level info by running the flight
         for i in range(startN, endN - 1):
             tas = self.traj_data['tas'][i]
             ff = self.traj_data['fuelFlow'][i]
-            roc = self.traj_data['rocs'][i]
+            roc = self.traj_data['climbRate'][i]
             seg_start_mass = self.traj_data['acMass'][i]
 
             # Calculate the forward true airspeed (will be used for ground speed)
