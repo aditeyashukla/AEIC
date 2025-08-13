@@ -312,8 +312,8 @@ class LegacyTrajectory(Trajectory):
             FL (float): Flight level of interest.
 
         Returns:
-            (list[int]) List containing the indices of the FLs in the performance data
-                that bound the given FL.
+            (list[int]) List containing the indices of the flight levels
+            in the performance data that bound the given flight level.
         """
         FL_ind_high = np.searchsorted(self.ac_performance.performance_table_cols[0], FL)
 
@@ -327,8 +327,8 @@ class LegacyTrajectory(Trajectory):
             )
 
         FL_ind_low = FL_ind_high - 1
-        FLs = [FL_ind_low, FL_ind_high]
-        return FLs
+        flightLevel = [FL_ind_low, FL_ind_high]
+        return flightLevel
 
     def __search_TAS_ind(self, tas: float) -> list[float]:
         """Searches the valid tas in the performance model for the indices bounding a
@@ -412,7 +412,7 @@ class LegacyTrajectory(Trajectory):
                 altitude
         """
         FL = meters_to_feet(alt) / 100
-        self.traj_data['FLs'][i] = FL
+        self.traj_data['flightLevel'][i] = FL
         FL_inds = self.__search_flight_levels_ind(FL)
         bounding_fls = np.array(self.ac_performance.performance_table_cols[0])[FL_inds]
 
@@ -486,7 +486,7 @@ class LegacyTrajectory(Trajectory):
             Tuple[float]: Interpolated TAS and weighting used in linear interpolation.
         """
         FL = meters_to_feet(alt) / 100
-        self.traj_data['FLs'][i] = FL
+        self.traj_data['flightLevel'][i] = FL
 
         # Construct interpolation weightings
         fl_weighting = (FL - self.crz_FLs[0]) / (self.crz_FLs[1] - self.crz_FLs[0])
@@ -679,7 +679,7 @@ class LegacyTrajectory(Trajectory):
 
         # Now we get rate of climb by running the flight
         for i in range(0, self.NClm - 1):
-            FL = self.traj_data['FLs'][i]
+            FL = self.traj_data['flightLevel'][i]
             tas = self.traj_data['tas'][i]
             ff = self.traj_data['fuelFlow'][i]
             seg_start_mass = self.traj_data['acMass'][i]
