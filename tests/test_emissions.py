@@ -158,7 +158,7 @@ def test_gse_wnsf_mapping():
         # Create temporary emission object to test GSE mapping
         temp_em = Emission.__new__(Emission)  # Create without calling __init__
         temp_em.pmnvol_mode = 'SCOPE11'
-        temp_em.fuel = {"EI_CO2": 3155.6, "nvolCarbCont": 0.95}
+        temp_em.fuel = {"EI_CO2": 3155.6, "nvolCarbCont": 0.95, "EI_H2O": 1233.3865}
         temp_em.total_fuel_burn = 0.0
         temp_em.GSE_emissions_g = np.zeros(
             (), dtype=temp_em._Emission__emission_dtype(1)
@@ -244,7 +244,7 @@ def test_lifecycle_co2_adjustment():
         + em.APU_emissions_g['CO2']
         + em.GSE_emissions_g['CO2']
     )
-
+    print(f"{em.summed_emission_g['CO2']}")
     assert em.summed_emission_g['CO2'] != base_co2, (
         "Lifecycle CO2 adjustment should modify total"
     )
